@@ -9,10 +9,29 @@ class Particle():
         self.pos = pos
         self.size = size
         # Random colors
+    if mood == 1:
         self.color = pygame.Color(
-            random.randint(50, 255),
-            random.randint(50, 255),
-            random.randint(50, 255)
+            random.randint(0, 100),
+            random.randint(150, 255),
+            random.randint(150, 255)
+        )
+    elif mood == 2:
+        self.color = pygame.Color(
+            random.randint(180, 255),
+            random.randint(50, 100),
+            0
+        )
+    elif mood == 3:
+        self.color = pygame.Color(
+            random.randint(80, 130),
+            random.randint(80, 130),
+            random.randint(150, 220)
+        )
+    elif mood == 4:
+        self.color = pygame.Color(
+            random.randint(200, 255),
+            random.randint(150, 220),
+            random.randint(0, 80)
         )
         self.age = 0 # in milliseconds
         self.life = life # in milliseconds
@@ -53,7 +72,7 @@ class ParticleTrail():
         self.particles = []
 
     def update(self, dt):
-        particle = Particle(self.pos, size=self.size, life=self.life)
+        particle = Particle(self.pos, size=self.size, life=self.life, mood=self.mood)
         self.particles.insert(0, particle)
         self._update_particles(dt)
         self._update_pos()
