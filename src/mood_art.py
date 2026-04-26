@@ -1,5 +1,6 @@
 import random
 import pygame
+import math
 
 
 class Particle():
@@ -65,7 +66,6 @@ class ParticleTrail():
 
     def _update_pos(self):
         x, y = self.pos
-        y += self.size
         self.pos = (x, y)
 
     def draw(self, surface):
@@ -81,6 +81,7 @@ class Rain():
         self.birth_rate = 1 # trails per frame
         self.trails = []
         self.fullscreen = False
+        self.mood = 1
 
     def update(self, dt):
         self._birth_new_particles()
