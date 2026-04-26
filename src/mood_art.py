@@ -1,76 +1,68 @@
 import random
 import pygame
 import math
+import sys
 
+MENU = "menu"
+VISUALIZER = "visualizer"
 
 class Particle():
      
-    def __init__(self, pos=(0,0), size=15, life=1000):
-        self.pos = pos
+    def __init__(self, pos, size, life, mood):
+        self.pos = list(pos)
         self.size = size
-        # Random colors
-    if mood == 1:
-        self.color = pygame.Color(
-            random.randint(0, 100),
-            random.randint(150, 255),
-            random.randint(150, 255)
-        )
-    elif mood == 2:
-        self.color = pygame.Color(
-            random.randint(180, 255),
-            random.randint(50, 100),
-            0
-        )
-    elif mood == 3:
-        self.color = pygame.Color(
-            random.randint(80, 130),
-            random.randint(80, 130),
-            random.randint(150, 220)
-        )
-    elif mood == 4:
-        self.color = pygame.Color(
-            random.randint(200, 255),
-            random.randint(150, 220),
-            random.randint(0, 80)
-        )
-        self.age = 0 # in milliseconds
-        self.life = life # in milliseconds
+        self.mood = mood
+        self.age = 0
+        self.life = life
         self.dead = False
-        self.alpha = 139
-        
-        self.shape = random.choice(['square', 'circle'])
+
+        # Color Logic
+        self.color = self._get_mood_color()
         self.surface = self.update_surface()
+
+    def _get_mood_color(self):
+        # Base Mood Colors
+        schemes = {
+            1: [(0, 100, 255), (0. 255, 200)],      # Calm: Blue/Teal
+            2: [(180, 0, 0), (255, 100, 0)],        # Chaotic: Red/Orange
+            3: [(80, 80, 150), (120, 120, 220)],    # Sad: Dark Blue/Purple
+            4: [(200, 150, 0), (255, 220, 100)]     # Nostalgic: Gold/ Yellow
+        }
+        c1, c2 = schemes.get(self.mood, [(255, 255, 255), (200, 200,200)])
+
+        # Random Color Blends
+        mix = random.random()
+        return pygame.Color(
+            int(c1[0] * mix + c2[0] * (1-mix)),
+            int(c1[1] * mix + c2[1] * (1-mix)),
+            int(c1[2] * mix + c2[2] * (1-mix)),
+        )
 
     def update(self, dt):
         self.age += dt
         if self.age > self.life:
             self.dead = True
-        self.alpha = 139 * (1 - (self.age / self.life))
 
     def update_surface(self):
-        if self.shape == 'square':
-            surf = pygame.Surface((self.size*0.8, self.size*0.8))
-            surf.fill(self.color)
-        else:
-            size_int = int(self.size)
-            surf = pygame.Surface((size_int, size_int), pygame.SRCALPHA)
-            pygame.draw.circle(surf, self.color, (size_int//2, size_int//2), size_int//2)
+        surf = pygame.Surface((self.size, self.size), pygame.SRCALPHA)
+        pygame.draw.circle(surf, self.color, (self.size//2, self.size//2), self.size//2)
         return surf
     
     def draw(self, surface):
-        if self.dead:
-            return
-        self.surface.set_alpha(self.alpha)
+        alpha = 255 * (1 - (self.age / self.life))
+        self.surface.set_alpha(alpha)
         surface.blit(self.surface, self.pos)
 
 
 class ParticleTrail():
-    def __init__(self, pos, size, life):
+    def __init__(self, pos, size, life, mood):
         self.pos = pos
         self.size = size
         self.life = life
+        self.mood = mood
         self.particles = []
         self.angle = random.random() * 6.28
+        
 
     def update(self, dt):
         particle = Particle(self.pos, size=self.size, life=self.life, mood=self.mood)
@@ -85,23 +77,13 @@ class ParticleTrail():
                 del self.particles[idx]
 
     def _update_pos(self):
-    
-        if self.mood == 1:
-            speed = 2
-        elif self.mood == 2:
-            speed = 7
-        elif self.mood == 3:
-         speed = 1
-        elif self.mood == 4:
-            speed = 3
+        speeds = {1: 2, 2: 7, 3: 1, 4:3}
+        speed = speeds.get(self.mood, 2)
 
-        y += speed
         x, y = self.pos
-
         self.angle += 0.15
         x += math.sin(self.angle) * 8
         y += 4
-
         self.pos = (x, y)
 
     def draw(self, surface):
@@ -132,16 +114,14 @@ class Rain():
     def _trail_is_offscreen(self, trail):
         if not trail.particles:
             return False
-        trail_is_offscreen = trail.particles[-1].pos[1] > self.screen_res[1]
-        return trail_is_offscreen
+        return trail.particles[-1].pos[1] > self.screen_res[1]
 
     def _birth_new_particles(self):
         for count in range(self.birth_rate):
-            screen_width = self.screen_res[0]
-            x = random.randrange(0, screen_width, self.particle_size)
+            x = random.randrange(0, self.screen_res[0], self.particle_size)
             pos = (x,0)
             life = random.randrange(500, 3000)
-            trail = ParticleTrail(pos, self.particle_size, life)
+            trail = ParticleTrail(pos, self.particle_size, life, self.mood)
             self.trails.insert(0, trail)
 
     def draw(self, surface):
@@ -152,7 +132,6 @@ def main():
     pygame.init()
     pygame.display.set_caption("Mood Visualizer")
     clock = pygame.time.Clock()
-    dt = 0
 
     resolution = (800, 600)
     screen = pygame.display.set_mode(resolution)
@@ -160,54 +139,29 @@ def main():
 
     running = True
     while running:
+        dt = clock.tick(60)
         # Event Loop
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
             # Fullscreen toggle
             elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_1:
-                    rain.mood = 1
-                elif event.key == pygame.K_2:
-                    rain.mood = 2
-                elif event.key == pygame.K_3:
-                    rain.mood = 3
-                elif event.key == pygame.K_4:
-                    rain.mood = 4
-                if event.key == pygame.K_f:
-                    if not rain.fullscreen:
-                        resolution = (1920, 1080)
-                        screen = pygame.display.set_mode(resolution, pygame.FULLSCREEN)
-                        rain.fullscreen = True
-                        rain.screen_res = resolution
-                    else:
-                        resolution = (800, 600)
-                        screen = pygame.display.set_mode(resolution)
-                        rain.fullscreen = False
-                        rain.screen_res = resolution
+                if event.key in [pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4]:
+                    rain.mood = int(event.unicode)
 
-        # Game logic
+        #BG color per mood
         rain.update(dt)
-        # Render & Display
-        if rain.mood == 1:
-            bg = (38, 124, 171)
-        elif rain.mood == 2:
-            bg = (25, 0, 0)
-        elif rain.mood == 3:
-            bg = (20, 20, 35)
-        elif rain.mood == 4:
-            bg = (60, 40, 10)
+        bg_colors = {1: (38, 124, 171), 2: (25, 0, 0), 3: (20, 20, 35), 4: (60, 40, 10)}
+        screen.fill(bg_colors.get(rain.mood, (0,0,0)))
 
-        screen.fill(bg)
         rain.draw(screen)
         
-        font = pygame.font. SysFont(None, 28)
+        font = pygame.font. SysFont(None, 24)
+        text = font.render("1: Calm | 2: Chaotic | 3: Sad | 4: Nostalgic", True, (255, 255, 255))
+        screen.blit(text, (20,20))
 
-        text = font.render("1 Calm 2 Chaotic 3 Sad 4 Nostalgic", True, (255, 255, 255))
-        blit(text, (20,20))
         pygame.display.flip()
 
-        dt = clock.tick(12)
     pygame.quit()
 
 
