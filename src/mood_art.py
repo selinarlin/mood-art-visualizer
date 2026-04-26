@@ -113,7 +113,7 @@ class Rain():
 
 def main():
     pygame.init()
-    pygame.display.set_caption("Digital Rain")
+    pygame.display.set_caption("Mood Visualizer")
     clock = pygame.time.Clock()
     dt = 0
 
