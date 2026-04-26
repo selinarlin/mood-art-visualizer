@@ -200,6 +200,11 @@ def main():
 
         screen.fill(bg)
         rain.draw(screen)
+        
+        font = pygame.font. SysFont(None, 28)
+
+        text = font.render("1 Calm 2 Chaotic 3 Sad 4 Nostalgic", True, (255, 255, 255))
+        blit(text, (20,20))
         pygame.display.flip()
 
         dt = clock.tick(12)
