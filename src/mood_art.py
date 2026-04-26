@@ -130,6 +130,14 @@ def main():
                 running = False
             # Fullscreen toggle
             elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_1:
+                    rain.mood = 1
+                elif event.key == pygame.K_2:
+                    rain.mood = 2
+                elif event.key == pygame.K_3:
+                    rain.mood = 3
+                elif event.key == pygame.K_4:
+                    rain.mood = 4
                 if event.key == pygame.K_f:
                     if not rain.fullscreen:
                         resolution = (1920, 1080)
