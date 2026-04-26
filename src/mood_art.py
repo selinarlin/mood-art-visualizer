@@ -70,6 +70,7 @@ class ParticleTrail():
         self.size = size
         self.life = life
         self.particles = []
+        self.angle = random.random() * 6.28
 
     def update(self, dt):
         particle = Particle(self.pos, size=self.size, life=self.life, mood=self.mood)
@@ -85,6 +86,11 @@ class ParticleTrail():
 
     def _update_pos(self):
         x, y = self.pos
+
+        self.angle += 0.15
+        x += math.sin(self.angle) * 8
+        y += 4
+
         self.pos = (x, y)
 
     def draw(self, surface):
