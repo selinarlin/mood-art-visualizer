@@ -153,8 +153,16 @@ def main():
         # Game logic
         rain.update(dt)
         # Render & Display
-        orange = pygame.Color(242, 193, 119)
-        screen.fill(orange)
+        if rain.mood == 1:
+            bg = (38, 124, 171)
+        elif rain.mood == 2:
+            bg = (25, 0, 0)
+        elif rain.mood == 3:
+            bg = (20, 20, 35)
+        elif rain.mood == 4:
+            bg = (60, 40, 10)
+
+        screen.fill(bg)
         rain.draw(screen)
         pygame.display.flip()
 
