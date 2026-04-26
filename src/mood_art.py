@@ -85,6 +85,17 @@ class ParticleTrail():
                 del self.particles[idx]
 
     def _update_pos(self):
+    
+        if self.mood == 1:
+            speed = 2
+        elif self.mood == 2:
+            speed = 7
+        elif self.mood == 3:
+         speed = 1
+        elif self.mood == 4:
+            speed = 3
+
+        y += speed
         x, y = self.pos
 
         self.angle += 0.15
