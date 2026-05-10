@@ -23,7 +23,7 @@ class Particle():
     def _get_mood_color(self):
         # Base Mood Colors
         schemes = {
-            1: [(0, 100, 255), (0. 255, 200)],      # Calm: Blue/Teal
+            1: [(0, 100, 255), (0, 255, 200)],      # Calm: Blue/Teal
             2: [(180, 0, 0), (255, 100, 0)],        # Chaotic: Red/Orange
             3: [(80, 80, 150), (120, 120, 220)],    # Sad: Dark Blue/Purple
             4: [(200, 150, 0), (255, 220, 100)]     # Nostalgic: Gold/ Yellow
@@ -55,20 +55,34 @@ class Particle():
 
 
 class ParticleTrail():
-    def __init__(self, pos, size, life, mood):
-        self.pos = pos
-        self.size = size
-        self.life = life
+    def __init__(self, screen_res, mood):
+        # Initiate random particle positions
+        self.center = [random.randint(0, screen_res[0]), random.randint(0, screen_res[1])]
+        self.radius = random.randint(20, 100)
+        self.angle = random.uniform(0, math.pi * 2)
+
+        # Random speed for each mood
+        speed_mult = { 1: 0.02, 2: 0.08, 3: 0.01, 4: 0.04}
+        self.rot_speed = random.uniform(0.5, 1.5) * speed_mult.get(mood, 0.02)
+        self.direction = random.choice(1, -1) # clockwise/ counter-clockwise
+
         self.mood = mood
         self.particles = []
-        self.angle = random.random() * 6.28
-        
 
     def update(self, dt):
-        particle = Particle(self.pos, size=self.size, life=self.life, mood=self.mood)
-        self.particles.insert(0, particle)
-        self._update_particles(dt)
-        self._update_pos()
+        self.angle += self.rot_speed * self.direction
+        x = self.center[0] + math.cos(self.angle) * self.radius
+        y = self.center[1] + maath.sin(self.angle) * self.radius
+
+        if random.random() > 0.7:
+            self.particles.append(Particle((x, y), 10, 1000, self.mood))
+
+        for p in self.particles[:]:
+            p.update(dt)
+            if p.dead: self.particles.remove(p)
+
+    def draw(self, surface):
+        for p in self.particles: p.draw(surface)
 
     def _update_particles(self, dt):
         for idx, particle in enumerate(self.particles):
