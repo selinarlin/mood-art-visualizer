@@ -8,8 +8,9 @@ VISUALIZER = "visualizer"
 
 class Particle():
      
-    def __init__(self, pos, size, life, mood):
+    def __init__(self, pos, vel, size, life, mood):
         self.pos = list(pos)
+        self.vel = vel
         self.size = size
         self.mood = mood
         self.age = 0
@@ -40,6 +41,10 @@ class Particle():
 
     def update(self, dt):
         self.age += dt
+
+        self.pos[0] += self.vel[0] * dt * 0.05
+        self.pos[1] += self.vel[1] * dt * 0.05
+        
         if self.age > self.life:
             self.dead = True
 
