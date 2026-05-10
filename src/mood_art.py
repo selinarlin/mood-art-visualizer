@@ -72,7 +72,10 @@ class ParticleTrail():
     def __init__(self, screen_res, mood):
         # Initiate random particle positions
         self.center = [random.randint(0, screen_res[0]), random.randint(0, screen_res[1])]
-        self.radius = random.randint(20, 100)
+        self.spiral_scale = random.uniform(0.6, 2.5)
+        self.radius = random.randint(20, 100) * self.spiral_scale
+        self.trail_size = random.randint(6, 40)
+        self.trail_variation = random.uniform(0.85, 1.15)
         self.angle = random.uniform(0, math.pi * 2)
 
         # Random speed for each mood
@@ -90,12 +93,13 @@ class ParticleTrail():
 
         if random.random() > 0.7:
         # Spiral movement direction
-            vx = math.cos(self.angle + math.pi / 2) * 2
-            vy = math.sin(self.angle + math.pi / 2) * 2
+            vx, vy = 0, 0
+
+            size = int(self.trail_size * self.trail_variation)
 
             self.particles.append(
-                Particle((x, y), (vx, vy), 10, 3000, self.mood)
-        )
+                Particle((x, y), (0, 0), size, 3000, self.mood)
+            )
 
         for p in self.particles:
             p.update(dt)
