@@ -26,7 +26,7 @@ class Particle():
             1: [(0, 100, 255), (0, 255, 200)],      # Calm: Blue/Teal
             2: [(180, 0, 0), (255, 100, 0)],        # Chaotic: Red/Orange
             3: [(80, 80, 150), (120, 120, 220)],    # Sad: Dark Blue/Purple
-            4: [(200, 150, 0), (255, 220, 100)]     # Nostalgic: Gold/ Yellow
+            4: [(200, 150, 0), (255, 220, 100)]     # Nostalgic: Gold/Yellow
         }
         c1, c2 = schemes.get(self.mood, [(255, 255, 255), (200, 200,200)])
 
@@ -49,7 +49,8 @@ class Particle():
         return surf
     
     def draw(self, surface):
-        alpha = 255 * (1 - (self.age / self.life))
+        alpha = int(255 * (1 - (self.age / self.life)))
+        alpha = max(0, min(255, alpha))
         self.surface.set_alpha(alpha)
         surface.blit(self.surface, self.pos)
 
@@ -64,7 +65,7 @@ class ParticleTrail():
         # Random speed for each mood
         speed_mult = { 1: 0.02, 2: 0.08, 3: 0.01, 4: 0.04}
         self.rot_speed = random.uniform(0.5, 1.5) * speed_mult.get(mood, 0.02)
-        self.direction = random.choice(1, -1) # clockwise/ counter-clockwise
+        self.direction = random.choice([1, -1]) # clockwise/ counter-clockwise
 
         self.mood = mood
         self.particles = []
@@ -74,67 +75,56 @@ class ParticleTrail():
         x = self.center[0] + math.cos(self.angle) * self.radius
         y = self.center[1] + math.sin(self.angle) * self.radius
 
-        if random.random() > 0.7:
+        if random.random() > 0.95:
             self.particles.append(Particle((x, y), 10, 1000, self.mood))
 
-        for p in self.particles[:]:
+        for p in self.particles:
             p.update(dt)
-            if p.dead: self.particles.remove(p)
+
+        self.particles = [p for p in self.particles if not p.dead]
 
     def draw(self, surface):
         for p in self.particles: p.draw(surface)
-
-    def _update_particles(self, dt):
-        for idx, particle in enumerate(self.particles):
-            particle.update(dt)
-            if particle.dead:
-                del self.particles[idx]
-
-    def _update_pos(self):
-        speeds = {1: 2, 2: 7, 3: 1, 4:3}
-        speed = speeds.get(self.mood, 2)
-
-        x, y = self.pos
-        self.angle += 0.15
-        x += math.sin(self.angle) * 8
-        y += 4
-        self.pos = (x, y)
-
-    def draw(self, surface):
-        for particle in self.particles:
-            particle.draw(surface)
 
 
 class App():
     
     def __init__(self):
         pygame.init()
+        pygame.font.init()
         self.res = (1000, 700)
         self.screen = pygame.display.set_mode(self.res)
+        pygame.display.set_caption("Mood Art Visualizer")
         self.clock = pygame.time.Clock()
         self.state = MENU
         self.mood = 1
         self.trails = []
+        self.running = True
 
     def draw_button(self, text, rect, color):
         mouse = pygame.mouse.get_pos()
         # Hover effect
-        draw_color = (color[0]+30, color[1]+30, color[2]+30) if rect.collidepoint(mouse) else color
+        draw_color = (min(color[0]+30, 255), min(color[1]+30, 255), min(color[2]+30, 255)) if rect.collidepoint(mouse) else color
         pygame.draw.rect(self.screen, draw_color, rect, border_radius=10)
         font = pygame.font.SysFont(None, 30)
         img = font.render(text, True, (255, 255, 255))
         self.screen.blit(img, (rect.x + (rect.width - img.get_width())//2, rect.y + 15))
 
     def run(self):
-        while True:
+        while self.running:
+            dt = self.clock.tick(60)
             if self.state == MENU:
                 self.menu_loop()
             else:
-                self.visualizer_loop()
+                self.visualizer_loop(dt)
+        
+        pygame.quit()
+        sys.exit()
     
     def menu_loop(self):
         self.screen.fill((30, 30, 30))
         btn_width, btn_height = 200, 50
+    
         # Buttons
         buttons = {
             1: pygame.Rect(self.res[0]//2 - 100, 200, btn_width, btn_height),
@@ -144,40 +134,45 @@ class App():
             "quit": pygame.Rect(self.res[0]//2 - 100, 550, btn_width, btn_height)
         }
 
+        mood_names = {1: "Calm", 2: "Chaotic", 3: "Sad", 4: "Nostalgic"}
+
         for mood_id, rect in buttons.items():
-            text =f"Mood {mood_id}" if isinstance(mood_id, int) else "Quit Game"
-            color = (50, 50, 150) if isinstance(mood_id, int) else (150, 50, 50)
+            text = mood_names[mood_id] if isinstance(mood_id, int) else "Quit Game"
+            color = (50, 50, 50) if isinstance(mood_id, int) else (150, 50, 50)
             self.draw_button(text, rect, color)
 
         for event in pygame.event.get():
-            if event.type == pygame.QUIT: pygame.quit(); sys.exit()
+            if event.type == pygame.QUIT:
+               self.running = False
             if event.type == pygame.MOUSEBUTTONDOWN:
                 for mood_id, rect in buttons.items():
                     if rect.collidepoint(event.pos):
-                        if mood_id == "quit": pygame.quit(); sys.exit()
-                        self.mood = mood_id
-                        self.trails = [ParticleTrail(self.res, self.mood) for _ in range(15)]
-                        self.state = VISUALIZER
+                        if mood_id == "quit":
+                            self.running = False
+                        else:
+                            self.mood = mood_id
+                            self.trails = [ParticleTrail(self.res, self.mood) for _ in range(10)]
+                            self.state = VISUALIZER
         
         pygame.display.flip()
 
-    def visualizer_loop(self):
+    def visualizer_loop(self, dt):
         self.screen.fill((10, 10, 20))
         back_btn = pygame.Rect(20, 20, 150, 40)
         self.draw_button("Return to Menu", back_btn, (100, 100, 100))
 
         for trail in self.trails:
-            trail.update(16)
+            trail.update(dt)
             trail.draw(self.screen)
 
         for event in pygame.event.get():
-            if event.type == pygame.QUIT: pygame.quit(); sys.exit()
+            if event.type == pygame.QUIT:
+                self.running = False
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if back_btn.collidpoint(event.pos):
+                if back_btn.collidepoint(event.pos):
                     self.state = MENU
         
         pygame.display.flip()
-        self.clock.tick(60)
 
 if __name__ == "__main__":
     App().run()
