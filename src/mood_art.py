@@ -72,7 +72,7 @@ class ParticleTrail():
     def update(self, dt):
         self.angle += self.rot_speed * self.direction
         x = self.center[0] + math.cos(self.angle) * self.radius
-        y = self.center[1] + maath.sin(self.angle) * self.radius
+        y = self.center[1] + math.sin(self.angle) * self.radius
 
         if random.random() > 0.7:
             self.particles.append(Particle((x, y), 10, 1000, self.mood))
@@ -105,79 +105,79 @@ class ParticleTrail():
             particle.draw(surface)
 
 
-class Rain():
+class App():
     
-    def __init__(self, screen_res):
-        self.screen_res = screen_res
-        self.particle_size = 15
-        self.birth_rate = 1 # trails per frame
-        self.trails = []
-        self.fullscreen = False
+    def __init__(self):
+        pygame.init()
+        self.res = (1000, 700)
+        self.screen = pygame.display.set_mode(self.res)
+        self.clock = pygame.time.Clock()
+        self.state = MENU
         self.mood = 1
+        self.trails = []
 
-    def update(self, dt):
-        self._birth_new_particles()
-        self._update_trails(dt)
+    def draw_button(self, text, rect, color):
+        mouse = pygame.mouse.get_pos()
+        # Hover effect
+        draw_color = (color[0]+30, color[1]+30, color[2]+30) if rect.collidepoint(mouse) else color
+        pygame.draw.rect(self.screen, draw_color, rect, border_radius=10)
+        font = pygame.font.SysFont(None, 30)
+        img = font.render(text, True, (255, 255, 255))
+        self.screen.blit(img, (rect.x + (rect.width - img.get_width())//2, rect.y + 15))
 
-    def _update_trails(self, dt):
-        for idx, trail in enumerate(self.trails):
-            trail.update(dt)
-            if self._trail_is_offscreen(trail):
-                del self.trails[idx]
+    def run(self):
+        while True:
+            if self.state == MENU:
+                self.menu_loop()
+            else:
+                self.visualizer_loop()
+    
+    def menu_loop(self):
+        self.screen.fill((30, 30, 30))
+        btn_width, btn_height = 200, 50
+        # Buttons
+        buttons = {
+            1: pygame.Rect(self.res[0]//2 - 100, 200, btn_width, btn_height),
+            2: pygame.Rect(self.res[0]//2 - 100, 270, btn_width, btn_height),
+            3: pygame.Rect(self.res[0]//2 - 100, 340, btn_width, btn_height),
+            4: pygame.Rect(self.res[0]//2 - 100, 410, btn_width, btn_height),
+            "quit": pygame.Rect(self.res[0]//2 - 100, 550, btn_width, btn_height)
+        }
 
-    def _trail_is_offscreen(self, trail):
-        if not trail.particles:
-            return False
-        return trail.particles[-1].pos[1] > self.screen_res[1]
+        for mood_id, rect in buttons.items():
+            text =f"Mood {mood_id}" if isinstance(mood_id, int) else "Quit Game"
+            color = (50, 50, 150) if isinstance(mood_id, int) else (150, 50, 50)
+            self.draw_button(text, rect, color)
 
-    def _birth_new_particles(self):
-        for count in range(self.birth_rate):
-            x = random.randrange(0, self.screen_res[0], self.particle_size)
-            pos = (x,0)
-            life = random.randrange(500, 3000)
-            trail = ParticleTrail(pos, self.particle_size, life, self.mood)
-            self.trails.insert(0, trail)
-
-    def draw(self, surface):
-        for trail in self.trails:
-            trail.draw(surface)
-
-def main():
-    pygame.init()
-    pygame.display.set_caption("Mood Visualizer")
-    clock = pygame.time.Clock()
-
-    resolution = (800, 600)
-    screen = pygame.display.set_mode(resolution)
-    rain = Rain(resolution)
-
-    running = True
-    while running:
-        dt = clock.tick(60)
-        # Event Loop
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-            # Fullscreen toggle
-            elif event.type == pygame.KEYDOWN:
-                if event.key in [pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4]:
-                    rain.mood = int(event.unicode)
-
-        #BG color per mood
-        rain.update(dt)
-        bg_colors = {1: (38, 124, 171), 2: (25, 0, 0), 3: (20, 20, 35), 4: (60, 40, 10)}
-        screen.fill(bg_colors.get(rain.mood, (0,0,0)))
-
-        rain.draw(screen)
+            if event.type == pygame.QUIT: pygame.quit(); sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                for mood_id, rect in buttons.items():
+                    if rect.collidepoint(event.pos):
+                        if mood_id == "quit": pygame.quit(); sys.exit()
+                        self.mood = mood_id
+                        self.trails = [ParticleTrail(self.res, self.mood) for _ in range(15)]
+                        self.state = VISUALIZER
         
-        font = pygame.font. SysFont(None, 24)
-        text = font.render("1: Calm | 2: Chaotic | 3: Sad | 4: Nostalgic", True, (255, 255, 255))
-        screen.blit(text, (20,20))
-
         pygame.display.flip()
 
-    pygame.quit()
+    def visualizer_loop(self):
+        self.screen.fill((10, 10, 20))
+        back_btn = pygame.Rect(20, 20, 150, 40)
+        self.draw_button("Return to Menu", back_btn, (100, 100, 100))
 
+        for trail in self.trails:
+            trail.update(16)
+            trail.draw(self.screen)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT: pygame.quit(); sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if back_btn.collidpoint(event.pos):
+                    self.state = MENU
+        
+        pygame.display.flip()
+        self.clock.tick(60)
 
 if __name__ == "__main__":
-    main()
+    App().run()
