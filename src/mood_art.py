@@ -54,11 +54,19 @@ class Particle():
         return surf
     
     def draw(self, surface):
-        alpha = int(255 * (1 - (self.age / self.life)))
-        alpha = max(0, min(255, alpha))
-        self.surface.set_alpha(alpha)
-        surface.blit(self.surface, self.pos)
-
+       progress = self.age / self.life
+       # Spiral stay visible for first 70%
+       if progress < 0.7:
+           alpha = 255
+        # Fade last 30%
+       else:
+           fade_progress = (progress - 0.7) / 0.3
+           alpha = int(255 * (1 - fade_progress))
+           
+       alpha = max(0, min(255, alpha))
+       
+       self.surface.set_alpha(alpha)
+       surface.blit(self.surface, self.pos)
 
 class ParticleTrail():
     def __init__(self, screen_res, mood):
@@ -86,7 +94,7 @@ class ParticleTrail():
             vy = math.sin(self.angle + math.pi / 2) * 2
 
             self.particles.append(
-                Particle((x, y), (vx, vy), 10, 1000, self.mood)
+                Particle((x, y), (vx, vy), 10, 3000, self.mood)
         )
 
         for p in self.particles:
