@@ -44,7 +44,7 @@ class Particle():
 
         self.pos[0] += self.vel[0] * dt * 0.05
         self.pos[1] += self.vel[1] * dt * 0.05
-        
+
         if self.age > self.life:
             self.dead = True
 
@@ -80,8 +80,14 @@ class ParticleTrail():
         x = self.center[0] + math.cos(self.angle) * self.radius
         y = self.center[1] + math.sin(self.angle) * self.radius
 
-        if random.random() > 0.95:
-            self.particles.append(Particle((x, y), 10, 1000, self.mood))
+        if random.random() > 0.7:
+        # Spiral movement direction
+            vx = math.cos(self.angle + math.pi / 2) * 2
+            vy = math.sin(self.angle + math.pi / 2) * 2
+
+            self.particles.append(
+                Particle((x, y), (vx, vy), 10, 1000, self.mood)
+        )
 
         for p in self.particles:
             p.update(dt)
