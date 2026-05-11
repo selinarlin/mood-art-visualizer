@@ -3,7 +3,7 @@
 #### Video Demo:[]
 #### Github Repository:[https://github.com/selinarlin/mood-art-visualizer/tree/main#]
 ## Description
-This **Mood Art Visualzier** is a python project that created animated particle art based on the user's chosen emotions. Once this program runs, the user will be met with a menu screen, where user can choose any of the four mood options. Once a mood is selected, it will transport the screen to a display of moving particles trails with the mood associated colors.
+This **Mood Art Visualizer** is a python project that created animated particle art based on the user's chosen emotions. Once this program runs, the user will be met with a menu screen, where user can choose any of the four mood options. Once a mood is selected, it will transport the screen to a display of moving particles trails with the mood associated colors.
 
 The four moods:
 - Calm
@@ -75,4 +75,4 @@ python project.py
 
 ## Author
 
-Created by <Selina Lin>
+Created by Selina Lin
