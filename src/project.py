@@ -134,8 +134,8 @@ class App():
     def __init__(self):
         pygame.init()
         pygame.font.init()
-        self.res = (1000, 700)
-        self.screen = pygame.display.set_mode(self.res)
+        self.screen = pygame.display.set_mode((0,0), pygame.FULLSCREEN)
+        self.res = self.screen.get_size()
         pygame.display.set_caption("Mood Art Visualizer")
         self.clock = pygame.time.Clock()
         self.state = MENU
@@ -173,20 +173,24 @@ class App():
     def menu_loop(self, events):
         self.screen.fill((0, 0, 0))
         btn_width, btn_height = 200, 50
+
+        start_y = self.res[1] // 2 - 120
+        spacing = 70
+        
         title_font = pygame.font.SysFont(None, 100)
         title_text = title_font.render("Visualize Your Mood!", True, (255, 255, 255))
         self.screen.blit(
             title_text,
-            (self.res[0]//2 - title_text.get_width()//2, 65)
+            (self.res[0]//2 - title_text.get_width()//2, start_y -120)
         )
-    
+
         # Buttons
         buttons = {
-            1: pygame.Rect(self.res[0]//2 - 100, 200, btn_width, btn_height),
-            2: pygame.Rect(self.res[0]//2 - 100, 270, btn_width, btn_height),
-            3: pygame.Rect(self.res[0]//2 - 100, 340, btn_width, btn_height),
-            4: pygame.Rect(self.res[0]//2 - 100, 410, btn_width, btn_height),
-            "quit": pygame.Rect(self.res[0]//2 - 100, 550, btn_width, btn_height)
+            1: pygame.Rect(self.res[0]//2 - 100, start_y, btn_width, btn_height),
+            2: pygame.Rect(self.res[0]//2 - 100, start_y + spacing, btn_width, btn_height),
+            3: pygame.Rect(self.res[0]//2 - 100, start_y + spacing * 2, btn_width, btn_height),
+            4: pygame.Rect(self.res[0]//2 - 100, start_y + spacing * 3, btn_width, btn_height),
+            "quit": pygame.Rect(self.res[0]//2 - 100, start_y + spacing * 5, btn_width, btn_height)
         }
 
         mood_names = {1: "Calm", 2: "Mad", 3: "Sad", 4: "Nostalgic"}
