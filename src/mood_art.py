@@ -3,6 +3,9 @@ import pygame
 import math
 import sys
 
+used_centers = []
+ui_block = None
+
 MENU = "menu"
 VISUALIZER = "visualizer"
 
@@ -24,10 +27,10 @@ class Particle():
     def _get_mood_color(self):
         # Base Mood Colors
         schemes = {
-            1: [(0, 100, 255), (0, 255, 200)],      # Calm: Blue/Teal
-            2: [(180, 0, 0), (255, 100, 0)],        # Chaotic: Red/Orange
-            3: [(80, 80, 150), (120, 120, 220)],    # Sad: Dark Blue/Purple
-            4: [(200, 150, 0), (255, 220, 100)]     # Nostalgic: Gold/Yellow
+            1: [(255, 138, 198), (255, 84, 158)],      # Calm: Pink
+            2: [(180, 0, 0), (255, 100, 0)],        # Mad: Red/Orange
+            3: [(8, 140, 196), (45, 23, 71)],    # Sad: Dark Blue/Purple
+            4: [(255, 176, 100), (255, 197, 82)]     # Nostalgic: Yellow/Orange
         }
         c1, c2 = schemes.get(self.mood, [(255, 255, 255), (200, 200,200)])
 
@@ -71,7 +74,23 @@ class Particle():
 class ParticleTrail():
     def __init__(self, screen_res, mood):
         # Initiate random particle positions
-        self.center = [random.randint(0, screen_res[0]), random.randint(0, screen_res[1])]
+        margin = 80
+        min_distance = 180
+        
+        while True:
+            candidate = [
+                random.randint(margin, screen_res[0] - margin),
+                random.randint(margin, screen_res[1] - margin)
+            ]
+
+            if (
+                all(math.dist(candidate, c) > min_distance for c in used_centers)
+                and (ui_block is None or not ui_block.collidepoint(candidate))
+            ):
+                used_centers.append(candidate)
+                self.center = candidate
+                break
+
         self.spiral_scale = random.uniform(0.6, 2.5)
         self.radius = random.randint(20, 100) * self.spiral_scale
         self.trail_size = random.randint(6, 40)
@@ -79,7 +98,7 @@ class ParticleTrail():
         self.angle = random.uniform(0, math.pi * 2)
 
         # Random speed for each mood
-        speed_mult = { 1: 0.02, 2: 0.08, 3: 0.01, 4: 0.04}
+        speed_mult = { 1: 0.06, 2: 0.1, 3: 0.02, 4: 0.04}
         self.rot_speed = random.uniform(0.5, 1.5) * speed_mult.get(mood, 0.02)
         self.direction = random.choice([1, -1]) # clockwise/ counter-clockwise
 
@@ -129,24 +148,37 @@ class App():
         # Hover effect
         draw_color = (min(color[0]+30, 255), min(color[1]+30, 255), min(color[2]+30, 255)) if rect.collidepoint(mouse) else color
         pygame.draw.rect(self.screen, draw_color, rect, border_radius=10)
-        font = pygame.font.SysFont(None, 30)
+        font = pygame.font.SysFont(None, 25)
         img = font.render(text, True, (255, 255, 255))
         self.screen.blit(img, (rect.x + (rect.width - img.get_width())//2, rect.y + 15))
 
     def run(self):
         while self.running:
             dt = self.clock.tick(60)
+
+            events = pygame.event.get()
+
+            for event in events:
+                if event.type == pygame.QUIT:
+                    self.running = False
+
             if self.state == MENU:
-                self.menu_loop()
+                self.menu_loop(events)
             else:
-                self.visualizer_loop(dt)
+                self.visualizer_loop(dt, events)
         
         pygame.quit()
         sys.exit()
     
-    def menu_loop(self):
-        self.screen.fill((30, 30, 30))
+    def menu_loop(self, events):
+        self.screen.fill((0, 0, 0))
         btn_width, btn_height = 200, 50
+        title_font = pygame.font.SysFont(None, 100)
+        title_text = title_font.render("Visualize Your Mood!", True, (255, 255, 255))
+        self.screen.blit(
+            title_text,
+            (self.res[0]//2 - title_text.get_width()//2, 65)
+        )
     
         # Buttons
         buttons = {
@@ -157,16 +189,20 @@ class App():
             "quit": pygame.Rect(self.res[0]//2 - 100, 550, btn_width, btn_height)
         }
 
-        mood_names = {1: "Calm", 2: "Chaotic", 3: "Sad", 4: "Nostalgic"}
+        mood_names = {1: "Calm", 2: "Mad", 3: "Sad", 4: "Nostalgic"}
 
         for mood_id, rect in buttons.items():
             text = mood_names[mood_id] if isinstance(mood_id, int) else "Quit Game"
-            color = (50, 50, 50) if isinstance(mood_id, int) else (150, 50, 50)
+            mood_colors = {
+                1: (105, 166, 51),
+                2: (180, 0, 0),
+                3: (8, 140, 196),
+                4: (247, 165, 72)
+            }
+            color = mood_colors.get(mood_id, (54, 54, 54))
             self.draw_button(text, rect, color)
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-               self.running = False
+        for event in events:
             if event.type == pygame.MOUSEBUTTONDOWN:
                 for mood_id, rect in buttons.items():
                     if rect.collidepoint(event.pos):
@@ -174,23 +210,44 @@ class App():
                             self.running = False
                         else:
                             self.mood = mood_id
+                            used_centers.clear()
                             self.trails = [ParticleTrail(self.res, self.mood) for _ in range(10)]
                             self.state = VISUALIZER
         
         pygame.display.flip()
 
-    def visualizer_loop(self, dt):
-        self.screen.fill((10, 10, 20))
+    def visualizer_loop(self, dt, events):
+        
+        if self.mood == 1: # calm
+            self.screen.fill((105, 166, 51))
+        elif self.mood == 2: # mad
+            self.screen.fill((51, 20, 9))
+        elif self.mood == 3: # sad
+            self.screen.fill((10, 12, 36))
+        elif self.mood == 4: # nostalgic
+            self.screen.fill((247, 165, 72))
+        else:
+            self.screen.fill((10, 10, 20))
+
         back_btn = pygame.Rect(20, 20, 150, 40)
-        self.draw_button("Return to Menu", back_btn, (100, 100, 100))
+
+        ui_padding = 20
+        global ui_block
+
+        ui_block = pygame.Rect(
+            back_btn.x - ui_padding,
+            back_btn.y - ui_padding,
+            back_btn.width + ui_padding * 2,
+            back_btn.height + ui_padding * 2
+        )
 
         for trail in self.trails:
             trail.update(dt)
             trail.draw(self.screen)
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.running = False
+        self.draw_button("Return to Menu", back_btn, (54, 54, 54))
+
+        for event in events:
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if back_btn.collidepoint(event.pos):
                     self.state = MENU
